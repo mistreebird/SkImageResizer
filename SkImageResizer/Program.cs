@@ -18,7 +18,7 @@ namespace SkImageResizer
             var destinationPath2 = Path.Combine(Environment.CurrentDirectory, "output2");
 
             // Sync
-
+            
             imageProcess.Clean(destinationPath1);
 
             sw.Start();
@@ -27,7 +27,7 @@ namespace SkImageResizer
 
             decimal result1 = sw.ElapsedMilliseconds;
             Console.WriteLine($"同步執行花費時間: {result1} ms");
-
+            
             // Async
 
             imageProcess.Clean(destinationPath2);
