@@ -72,25 +72,33 @@ namespace SkImageResizer
         /// <param name="scale">縮放比例</param>
         public async Task ResizeImageAsync(string filePath,string destPath, double scale)
         {
+            /*
             var fileBytes = await File.ReadAllBytesAsync(filePath);
-
             var bitmap = SKBitmap.Decode(fileBytes);
-            var imgPhoto = SKImage.FromBitmap(bitmap);
-            var imgName = Path.GetFileNameWithoutExtension(filePath);
+            */
+            await Task.Run(() => {
+              var bitmap = SKBitmap.Decode(filePath);
+              var imgPhoto = SKImage.FromBitmap(bitmap);
+              var imgName = Path.GetFileNameWithoutExtension(filePath);
 
-            var sourceWidth = imgPhoto.Width;
-            var sourceHeight = imgPhoto.Height;
+              var sourceWidth = imgPhoto.Width;
+              var sourceHeight = imgPhoto.Height;
 
-            var destinationWidth = (int)(sourceWidth * scale);
-            var destinationHeight = (int)(sourceHeight * scale);
+              var destinationWidth = (int)(sourceWidth * scale);
+              var destinationHeight = (int)(sourceHeight * scale);
 
-            using var scaledBitmap = bitmap.Resize(
-                new SKImageInfo(destinationWidth, destinationHeight),
-                SKFilterQuality.High);
-            using var scaledImage = SKImage.FromBitmap(scaledBitmap);
+              using var scaledBitmap = bitmap.Resize(
+                  new SKImageInfo(destinationWidth, destinationHeight),
+                  SKFilterQuality.High);
+              using var scaledImage = SKImage.FromBitmap(scaledBitmap);
 
-            using var data = scaledImage.Encode(SKEncodedImageFormat.Jpeg, 100);
-            await File.WriteAllBytesAsync(Path.Combine(destPath, imgName + ".jpg"), data.ToArray());
+              using var data = scaledImage.Encode(SKEncodedImageFormat.Jpeg, 100);
+              using var s = File.OpenWrite(Path.Combine(destPath, imgName + ".jpg"));
+              data.SaveTo(s);
+              /*
+              await File.WriteAllBytesAsync(Path.Combine(destPath, imgName + ".jpg"), data.ToArray());
+              */
+            });
         }
 
         /// <summary>
