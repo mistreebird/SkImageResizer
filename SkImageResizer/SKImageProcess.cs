@@ -72,10 +72,11 @@ namespace SkImageResizer
         /// <param name="scale">縮放比例</param>
         public async Task ResizeImageAsync(string filePath,string destPath, double scale)
         {
-            await Task.Run(async () => {
-              var fileBytes = await File.ReadAllBytesAsync(filePath);
-              var bitmap = SKBitmap.Decode(fileBytes);
-              //var bitmap = SKBitmap.Decode(filePath);
+            //await Task.Run(async () => {
+              //var fileBytes = await File.ReadAllBytesAsync(filePath);
+              //var bitmap = SKBitmap.Decode(fileBytes);
+              await Task.Yield();
+              var bitmap = SKBitmap.Decode(filePath);
               var imgPhoto = SKImage.FromBitmap(bitmap);
               var imgName = Path.GetFileNameWithoutExtension(filePath);
 
@@ -91,12 +92,12 @@ namespace SkImageResizer
               using var scaledImage = SKImage.FromBitmap(scaledBitmap);
 
               using var data = scaledImage.Encode(SKEncodedImageFormat.Jpeg, 100);
-              /*
+
               using var s = File.OpenWrite(Path.Combine(destPath, imgName + ".jpg"));
               data.SaveTo(s);
-              */
-              await File.WriteAllBytesAsync(Path.Combine(destPath, imgName + ".jpg"), data.ToArray());
-            });
+
+              //await File.WriteAllBytesAsync(Path.Combine(destPath, imgName + ".jpg"), data.ToArray());
+            //});
         }
 
         /// <summary>
