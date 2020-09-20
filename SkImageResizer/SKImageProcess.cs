@@ -48,6 +48,12 @@ namespace SkImageResizer
 
         public async Task ResizeImagesAsync(string sourcePath, string destPath, double scale)
         {
+
+            await ResizeImagesAsync(sourcePath, destPath, scale, CancellationToken.None);
+        }
+
+        public async Task ResizeImagesAsync(string sourcePath, string destPath, double scale, CancellationToken token)
+        {
             if (!Directory.Exists(destPath))
             {
                 Directory.CreateDirectory(destPath);
@@ -58,10 +64,32 @@ namespace SkImageResizer
             var allFiles = FindImages(sourcePath);
             foreach (var filePath in allFiles)
             {
-                tasks.Add(ResizeImageAsync(filePath, destPath, scale));
+                tasks.Add(ResizeImageAsync(filePath, destPath, scale, token));
             }
 
-            await Task.WhenAll(tasks.ToArray());
+            try
+            {
+                await Task.WhenAll(tasks.ToArray());
+            }
+            catch(OperationCanceledException)
+            {
+                foreach(Task t in tasks)
+                {
+                    Console.Write(t.Id + " ");
+                    if (t.IsCanceled)
+                    {
+                        Console.WriteLine("已經取消");
+                    }
+                    else if (t.IsCompleted)
+                    {
+                        Console.WriteLine("已經處理好");
+                    }
+                    else if (t.IsCompleted)
+                    {
+                        Console.WriteLine("還沒處理好");
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -70,33 +98,48 @@ namespace SkImageResizer
         /// <param name="filePath">檔案路徑</param>
         /// <param name="destPath">存放路徑</param>
         /// <param name="scale">縮放比例</param>
-        public async Task ResizeImageAsync(string filePath,string destPath, double scale)
+        public async Task ResizeImageAsync(string filePath, string destPath, double scale)
+        {
+            await ResizeImageAsync(filePath, destPath, scale, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Resize Image
+        /// </summary>
+        /// <param name="filePath">檔案路徑</param>
+        /// <param name="destPath">存放路徑</param>
+        /// <param name="scale">縮放比例</param>
+        public async Task ResizeImageAsync(string filePath, string destPath, double scale, CancellationToken token)
         {
             //await Task.Run(async () => {
-              //var fileBytes = await File.ReadAllBytesAsync(filePath);
-              //var bitmap = SKBitmap.Decode(fileBytes);
-              await Task.Yield();
-              var bitmap = SKBitmap.Decode(filePath);
-              var imgPhoto = SKImage.FromBitmap(bitmap);
-              var imgName = Path.GetFileNameWithoutExtension(filePath);
+            //var fileBytes = await File.ReadAllBytesAsync(filePath);
+            //var bitmap = SKBitmap.Decode(fileBytes);
+            await Task.Yield();
+            var bitmap = SKBitmap.Decode(filePath);
+            var imgPhoto = SKImage.FromBitmap(bitmap);
+            var imgName = Path.GetFileNameWithoutExtension(filePath);
 
-              var sourceWidth = imgPhoto.Width;
-              var sourceHeight = imgPhoto.Height;
+            var sourceWidth = imgPhoto.Width;
+            var sourceHeight = imgPhoto.Height;
 
-              var destinationWidth = (int)(sourceWidth * scale);
-              var destinationHeight = (int)(sourceHeight * scale);
+            var destinationWidth = (int)(sourceWidth * scale);
+            var destinationHeight = (int)(sourceHeight * scale);
 
-              using var scaledBitmap = bitmap.Resize(
-                  new SKImageInfo(destinationWidth, destinationHeight),
-                  SKFilterQuality.High);
-              using var scaledImage = SKImage.FromBitmap(scaledBitmap);
+            token.ThrowIfCancellationRequested();
 
-              using var data = scaledImage.Encode(SKEncodedImageFormat.Jpeg, 100);
+            using var scaledBitmap = bitmap.Resize(
+                new SKImageInfo(destinationWidth, destinationHeight),
+                SKFilterQuality.High);
+            using var scaledImage = SKImage.FromBitmap(scaledBitmap);
 
-              using var s = File.OpenWrite(Path.Combine(destPath, imgName + ".jpg"));
-              data.SaveTo(s);
+            using var data = scaledImage.Encode(SKEncodedImageFormat.Jpeg, 100);
 
-              //await File.WriteAllBytesAsync(Path.Combine(destPath, imgName + ".jpg"), data.ToArray());
+            token.ThrowIfCancellationRequested();
+
+            using var s = File.OpenWrite(Path.Combine(destPath, imgName + ".jpg"));
+            data.SaveTo(s);
+
+            //await File.WriteAllBytesAsync(Path.Combine(destPath, imgName + ".jpg"), data.ToArray());
             //});
         }
 
